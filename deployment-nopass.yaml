@@ -1,0 +1,52 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: cache-redis-stg
+  namespace: cache-ns-stg
+  labels:
+    app: cache-redis-stg
+    env: cache-stg
+spec:
+  serviceName: cache-redis-svc-stg
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cache-redis-stg
+        env: cache-stg
+    spec:
+      containers:
+      - name: cache-redis-stg
+        image: "redis:4.0.1"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ALLOW_EMPTY_PASSWORD
+          value: "yes"
+        ports:
+        - name: redis
+          containerPort: 6379
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 200m
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: cache-pvc-stg
